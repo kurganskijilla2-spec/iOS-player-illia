@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: unsigned-ios-archive-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   archive:
     name: Create unsigned archive
