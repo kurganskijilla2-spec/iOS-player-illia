@@ -15,15 +15,20 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
+    private let libraryStore: TrackLibraryStore
 
-    private let cardColors: [Color] = [
-        .purple, .indigo, .pink, .cyan, .orange, .mint
-    ]
-
-    override init() {
+    init(libraryStore: TrackLibraryStore? = nil) {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        self.libraryStore = libraryStore ?? TrackLibraryStore(directoryURL: documentsDirectory)
         super.init()
         setupAudioSession()
         setupRemoteTransportControls()
+
+        tracks = self.libraryStore.restoreTracks()
+        if let firstTrack = tracks.first {
+            loadTrack(firstTrack, autoPlay: false)
+        }
     }
 
     // Налаштування аудіосесії для роботи у фоні
@@ -39,37 +44,19 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     // Імпорт аудіофайлів з пам'яті iPhone
     func importTracks(from urls: [URL]) {
-        for url in urls {
-            guard url.startAccessingSecurityScopedResource() else { continue }
-            defer { url.stopAccessingSecurityScopedResource() }
-
-            // Копіюємо файл у локальну папку додатка, щоб доступ не зник після перезапуску
-            let fileManager = FileManager.default
-            guard let docsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { continue }
-            let destinationURL = docsDir.appendingPathComponent(url.lastPathComponent)
-
-            do {
-                if !fileManager.fileExists(atPath: destinationURL.path) {
-                    try fileManager.copyItem(at: url, to: destinationURL)
-                }
-
-                let rawName = destinationURL.deletingPathExtension().lastPathComponent
-                let parts = rawName.components(separatedBy: " - ")
-                let artist = parts.count > 1 ? parts[0] : "Невідомий виконавець"
-                let title = parts.count > 1 ? parts[1] : rawName
-                let randomColor = cardColors.randomElement() ?? .purple
-
-                let newTrack = Track(title: title, artist: artist, url: destinationURL, accentColor: randomColor)
-                if !tracks.contains(where: { $0.url == destinationURL }) {
-                    tracks.append(newTrack)
-                }
-            } catch {
-                print("Помилка копіювання файлу: \(error.localizedDescription)")
-            }
-        }
+        let report = libraryStore.importTracks(from: urls)
+        let existingURLs = Set(tracks.map { $0.url.standardizedFileURL })
+        tracks.append(contentsOf: report.tracks.filter {
+            !existingURLs.contains($0.url.standardizedFileURL)
+        })
 
         if currentTrack == nil, let first = tracks.first {
             loadTrack(first, autoPlay: false)
+        }
+
+        if !report.failures.isEmpty {
+            let firstFailure = report.failures[0]
+            print("Не вдалося імпортувати \(firstFailure.fileName): \(firstFailure.message)")
         }
     }
 
