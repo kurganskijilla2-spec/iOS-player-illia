@@ -128,5 +128,6 @@ final class TrackLibraryStoreTests: XCTestCase {
 
         XCTAssertEqual(manager.tracks.count, 1)
         XCTAssertEqual(manager.tracks.first?.url.lastPathComponent, "good.mp3")
+        XCTAssertTrue(manager.errorMessage?.contains("broken.mp3") == true)
     }
 }

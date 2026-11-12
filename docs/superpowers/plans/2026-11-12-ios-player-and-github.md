@@ -79,16 +79,17 @@
 **Files:**
 - Modify: `AudioManager.swift`
 - Modify: `ContentView.swift`
-- Modify: `illiaTests/TrackLibraryStoreTests.swift` only if a testable playback state helper is introduced.
+- Modify: `illiaTests/AudioManagerPlaybackTests.swift`
+- Modify: `illiaTests/TrackLibraryStoreTests.swift`
 
 **Interfaces:**
 - `AudioManager.errorMessage: String?` publishes a user-facing Ukrainian error.
 - A failed import or player initialization sets `errorMessage`; successful user actions clear stale errors.
 - `ContentView` presents `errorMessage` in a dismissible alert.
 
-- [ ] **Step 1: Add a focused test** for playback-state calculation when no player is available, if extracted into a testable helper.
+- [ ] **Step 1: Add focused tests** that the play control without a loaded player remains paused and publishes a Ukrainian error, and that a partial import exposes the failed filename while retaining imported tracks.
 - [ ] **Step 2: Verify the test fails** before changing playback state handling.
-- [ ] **Step 3: Implement error publication and alert presentation.** Ensure `isPlaying` reflects the actual result of `AVAudioPlayer.play()` and metadata is refreshed after playback state changes.
+- [ ] **Step 3: Implement error publication and alert presentation.** Ensure a failed track load clears any previous player, `isPlaying` reflects the actual result of `AVAudioPlayer.play()`, and lock-screen elapsed-time metadata refreshes during playback.
 - [ ] **Step 4: Run all XCTest cases** and inspect the Swift changes for consistent error clearing and track state.
 - [ ] **Step 5: Commit and push.** Commit as `fix: report audio playback and import errors`, then push to `origin main` without force.
 

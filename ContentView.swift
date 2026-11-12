@@ -203,9 +203,29 @@ struct ContentView: View {
             allowedContentTypes: [.audio],
             allowsMultipleSelection: true
         ) { result in
-            if case .success(let urls) = result {
+            switch result {
+            case .success(let urls):
                 audioManager.importTracks(from: urls)
+            case .failure(let error):
+                audioManager.errorMessage = error.localizedDescription
             }
+        }
+        .alert(
+            "Помилка",
+            isPresented: Binding(
+                get: { audioManager.errorMessage != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        audioManager.errorMessage = nil
+                    }
+                }
+            )
+        ) {
+            Button("Гаразд", role: .cancel) {
+                audioManager.errorMessage = nil
+            }
+        } message: {
+            Text(audioManager.errorMessage ?? "Сталася невідома помилка.")
         }
     }
 

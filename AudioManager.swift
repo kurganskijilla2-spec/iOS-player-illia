@@ -12,6 +12,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var duration: TimeInterval = 0
     @Published var isShuffle: Bool = false
     @Published var isRepeat: Bool = false
+    @Published var errorMessage: String?
 
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
@@ -44,6 +45,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     // Імпорт аудіофайлів з пам'яті iPhone
     func importTracks(from urls: [URL]) {
+        errorMessage = nil
         let report = libraryStore.importTracks(from: urls)
         let existingURLs = Set(tracks.map { $0.url.standardizedFileURL })
         tracks.append(contentsOf: report.tracks.filter {
@@ -55,35 +57,44 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         if !report.failures.isEmpty {
-            let firstFailure = report.failures[0]
-            print("Не вдалося імпортувати \(firstFailure.fileName): \(firstFailure.message)")
+            let fileNames = report.failures.map(\.fileName).joined(separator: ", ")
+            let firstMessage = report.failures[0].message
+            errorMessage = "Не вдалося додати \(report.failures.count) файлів (\(fileNames)). \(firstMessage)"
         }
     }
 
     func loadTrack(_ track: Track, autoPlay: Bool = true) {
         stopTimer()
+        audioPlayer = nil
         currentTrack = track
+        isPlaying = false
+        duration = 0
+        currentTime = 0
 
         do {
-            audioPlayer = try AVAudioPlayer(contentsOf: track.url)
-            audioPlayer?.delegate = self
-            audioPlayer?.prepareToPlay()
-            duration = audioPlayer?.duration ?? 0
-            currentTime = 0
+            let player = try AVAudioPlayer(contentsOf: track.url)
+            player.delegate = self
+            player.prepareToPlay()
+            audioPlayer = player
+            duration = player.duration
+            errorMessage = nil
             updateNowPlayingInfo()
 
             if autoPlay {
                 play()
-            } else {
-                isPlaying = false
             }
         } catch {
-            print("Не вдалося відкрити трек: \(error.localizedDescription)")
+            errorMessage = "Не вдалося відкрити «\(track.title)». Перевірте, чи файл не пошкоджено."
+            updateNowPlayingInfo()
         }
     }
 
     func togglePlayPause() {
-        guard currentTrack != nil else { return }
+        guard currentTrack != nil else {
+            errorMessage = "Спочатку оберіть або додайте аудіотрек."
+            return
+        }
+
         if isPlaying {
             pause()
         } else {
@@ -92,8 +103,26 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func play() {
-        audioPlayer?.play()
+        guard let player = audioPlayer else {
+            isPlaying = false
+            stopTimer()
+            errorMessage = currentTrack == nil
+                ? "Спочатку оберіть або додайте аудіотрек."
+                : "Не вдалося відкрити аудіотрек для відтворення."
+            updateNowPlayingInfo()
+            return
+        }
+
+        guard player.play() else {
+            isPlaying = false
+            stopTimer()
+            errorMessage = "Не вдалося запустити відтворення цього аудіотреку."
+            updateNowPlayingInfo()
+            return
+        }
+
         isPlaying = true
+        errorMessage = nil
         startTimer()
         updateNowPlayingInfo()
     }
@@ -106,8 +135,10 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func seek(to time: TimeInterval) {
-        audioPlayer?.currentTime = time
-        currentTime = time
+        guard let player = audioPlayer else { return }
+        let boundedTime = min(max(time, 0), duration)
+        player.currentTime = boundedTime
+        currentTime = boundedTime
         updateNowPlayingInfo()
     }
 
@@ -143,6 +174,14 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     // Автоматичний перехід до наступного треку після завершення
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        guard flag else {
+            isPlaying = false
+            stopTimer()
+            errorMessage = "Відтворення аудіотреку завершилося з помилкою."
+            updateNowPlayingInfo()
+            return
+        }
+
         if isRepeat {
             seek(to: 0)
             play()
@@ -156,6 +195,7 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             guard let self = self, let player = self.audioPlayer else { return }
             self.currentTime = player.currentTime
+            self.updateNowPlayingInfo()
         }
     }
 
@@ -187,7 +227,11 @@ class AudioManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func updateNowPlayingInfo() {
-        guard let track = currentTrack else { return }
+        guard let track = currentTrack else {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+
         var nowPlayingInfo = [String: Any]()
         nowPlayingInfo[MPMediaItemPropertyTitle] = track.title
         nowPlayingInfo[MPMediaItemPropertyArtist] = track.artist
