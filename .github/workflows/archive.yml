@@ -3,9 +3,8 @@ name: Unsigned iOS archive
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - ".github/workflows/archive.yml"
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -35,13 +34,6 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
           CODE_SIGN_IDENTITY=""
-
-      - name: Upload unsigned archive
-        uses: actions/upload-artifact@v6
-        with:
-          name: illia-unsigned-archive
-          path: build/illia.xcarchive
-          if-no-files-found: error
 
       - name: Package unsigned IPA
         run: |
