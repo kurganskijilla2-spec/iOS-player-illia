@@ -1,0 +1,48 @@
+name: illia
+options:
+  bundleIdPrefix: com.kurganskijilla2
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  illia:
+    type: application
+    platform: iOS
+    sources:
+      - AudioManager.swift
+      - ContentView.swift
+      - Track.swift
+      - illiaApp.swift
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: illia
+        UIBackgroundModes:
+          - audio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kurganskijilla2.illia
+        TARGETED_DEVICE_FAMILY: "1"
+  illiaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - illiaTests
+    dependencies:
+      - target: illia
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kurganskijilla2.illiaTests
+schemes:
+  illia:
+    build:
+      targets:
+        illia: all
+        illiaTests: [test]
+    test:
+      config: Debug
+      targets:
+        - illiaTests

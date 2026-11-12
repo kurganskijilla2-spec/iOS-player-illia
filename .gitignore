@@ -1,0 +1,19 @@
+# Xcode project state and generated files
+*.xcuserstate
+xcuserdata/
+DerivedData/
+illia.xcodeproj/
+Info.plist
+*.xcarchive/
+*.xcresult/
+
+# Build and package output
+build/
+.build/
+.swiftpm/
+
+# Local agent workspaces
+.superpowers/
+
+# macOS
+.DS_Store
