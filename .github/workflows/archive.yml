@@ -1,4 +1,4 @@
-name: Unsigned iOS archive
+name: Build iOS IPA
 
 on:
   workflow_dispatch:
@@ -10,13 +10,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: unsigned-ios-archive-${{ github.ref }}
+  group: build-ios-ipa-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  archive:
-    name: Create unsigned archive
-    runs-on: macos-14
+  build:
+    name: Build IPA
+    runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - name: Check out source
@@ -28,27 +28,31 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Archive app without signing
+      - name: Build app for iPhone
         run: >-
-          xcodebuild archive
+          xcodebuild build
           -project illia.xcodeproj
           -scheme illia
+          -configuration Release
+          -sdk iphoneos
           -destination 'generic/platform=iOS'
-          -archivePath build/illia.xcarchive
+          -derivedDataPath build/DerivedData
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
           CODE_SIGN_IDENTITY=""
 
-      - name: Package unsigned IPA
+      - name: Package IPA
         run: |
-          mkdir -p build/ipa/Payload
-          ditto build/illia.xcarchive/Products/Applications/illia.app build/ipa/Payload/illia.app
-          cd build/ipa
-          zip -qry ../illia-unsigned.ipa Payload
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/illia.app"
+          test -d "$APP_PATH"
+          mkdir -p build/package/Payload
+          ditto "$APP_PATH" build/package/Payload/illia.app
+          cd build/package
+          zip -qry ../illia.ipa Payload
 
-      - name: Upload unsigned IPA
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v6
         with:
-          name: illia-unsigned-ipa
-          path: build/illia-unsigned.ipa
+          name: illia-ipa
+          path: build/illia.ipa
           if-no-files-found: error
