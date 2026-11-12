@@ -15,6 +15,7 @@ targets:
       - AudioManager.swift
       - ContentView.swift
       - Track.swift
+      - TrackLibraryStore.swift
       - illiaApp.swift
     info:
       path: Info.plist

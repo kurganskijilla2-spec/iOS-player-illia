@@ -65,7 +65,7 @@
 **Interfaces:**
 - `TrackLibraryStore.init(directoryURL:fileManager:)` owns import and restore operations within the app-managed directory.
 - `TrackLibraryStore.restoreTracks() -> [Track]` returns existing supported audio files in deterministic filename order.
-- `TrackLibraryStore.importTracks(from:) throws -> [Track]` copies available scoped files into the managed directory, assigns unique destinations for collisions, and throws actionable errors for failed copies.
+- `TrackLibraryStore.importTracks(from:) -> TrackImportReport` copies available scoped files into the managed directory, assigns unique destinations for collisions, and returns successes plus per-file failures so one bad selection does not discard successful imports.
 
 - [ ] **Step 1: Write XCTest cases** for deterministic restore, ignored missing/unsupported files, duplicate basenames preserving both file contents, and failed-copy cleanup.
 - [ ] **Step 2: Run the XCTest target** and confirm the new behavioral cases fail before implementation.
