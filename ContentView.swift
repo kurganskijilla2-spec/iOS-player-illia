@@ -170,7 +170,7 @@ struct ContentView: View {
                             Text("Тут поки порожньо")
                                 .font(.subheadline.weight(.medium))
                                 .foregroundColor(.white.opacity(0.6))
-                            Text("Завантажте MP3, M4A або WAV із додатка «Файли»")
+                            Text("Додайте MP3, M4A, WAV, AIFF, AAC або CAF із додатка «Файли»")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.4))
                             Spacer()

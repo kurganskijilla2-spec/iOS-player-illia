@@ -97,9 +97,10 @@
 
 **Files:**
 - Modify: `README.md`
+- Modify: `ContentView.swift` for the supported-format empty-state text.
 - Modify: workflow files only if verification reveals a defect.
 
-- [ ] **Step 1: Re-read the design and this plan** and check every stated goal against the repository.
+- [ ] **Step 1: Re-read the design and this plan** and check every stated goal against the repository; make the empty-state format hint match the actual supported import types.
 - [ ] **Step 2: Run local static checks** for YAML syntax, project configuration consistency, and `git diff --check`.
 - [ ] **Step 3: Inspect GitHub Actions results** for the pushed commits; fix and push any workflow or compile failures.
 - [ ] **Step 4: Confirm the working tree is clean** and report the commit IDs and workflow status without claiming a build passed unless GitHub reports success.
