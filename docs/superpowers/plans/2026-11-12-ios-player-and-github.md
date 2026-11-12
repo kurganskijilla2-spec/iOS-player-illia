@@ -67,7 +67,7 @@
 - `TrackLibraryStore.restoreTracks() -> [Track]` returns existing supported audio files in deterministic filename order.
 - `TrackLibraryStore.importTracks(from:) -> TrackImportReport` copies available scoped files into the managed directory, assigns unique destinations for collisions, and returns successes plus per-file failures so one bad selection does not discard successful imports.
 
-- [ ] **Step 1: Write XCTest cases** for deterministic restore, ignored missing/unsupported files, duplicate basenames preserving both file contents, and failed-copy cleanup.
+- [ ] **Step 1: Write XCTest cases** for deterministic restore, ignored missing/unsupported files, duplicate basenames preserving both file contents, failed-copy cleanup, manager startup restoration, and partial-success import handling.
 - [ ] **Step 2: Run the XCTest target** and confirm the new behavioral cases fail before implementation.
 - [ ] **Step 3: Implement `TrackLibraryStore`** with Foundation file operations, supported audio extensions, collision-safe names, security-scoped access cleanup, and partial-copy cleanup.
 - [ ] **Step 4: Run the XCTest target** and confirm all store tests pass.

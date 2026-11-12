@@ -93,4 +93,40 @@ final class TrackLibraryStoreTests: XCTestCase {
         XCTAssertEqual(report.failures.count, 1)
         XCTAssertEqual(try String(contentsOf: blockedLibraryURL, encoding: .utf8), "block")
     }
+
+    func testAudioManagerRestoresManagedTracksDuringInitialization() throws {
+        let libraryURL = temporaryRoot.appendingPathComponent("Library", isDirectory: true)
+        try FileManager.default.createDirectory(at: libraryURL, withIntermediateDirectories: true)
+        try Data("stored audio".utf8).write(to: libraryURL.appendingPathComponent("Artist - Song.mp3"))
+        let store = TrackLibraryStore(
+            directoryURL: libraryURL,
+            fileManager: .default,
+            isPlayableAudio: { _ in true }
+        )
+
+        let manager = AudioManager(libraryStore: store)
+
+        XCTAssertEqual(manager.tracks.map(\.title), ["Song"])
+        XCTAssertEqual(manager.tracks.map(\.artist), ["Artist"])
+        XCTAssertFalse(manager.isPlaying)
+    }
+
+    func testAudioManagerKeepsSuccessfulImportsWhenOneFileIsInvalid() throws {
+        let sourceDirectory = temporaryRoot.appendingPathComponent("Sources", isDirectory: true)
+        try FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        let goodSource = sourceDirectory.appendingPathComponent("good.mp3")
+        let badSource = sourceDirectory.appendingPathComponent("broken.mp3")
+        try Data("good audio".utf8).write(to: goodSource)
+        try Data("broken audio".utf8).write(to: badSource)
+        let store = TrackLibraryStore(
+            directoryURL: temporaryRoot.appendingPathComponent("Library", isDirectory: true),
+            isPlayableAudio: { $0.lastPathComponent != "broken.mp3" }
+        )
+        let manager = AudioManager(libraryStore: store)
+
+        manager.importTracks(from: [goodSource, badSource])
+
+        XCTAssertEqual(manager.tracks.count, 1)
+        XCTAssertEqual(manager.tracks.first?.url.lastPathComponent, "good.mp3")
+    }
 }
